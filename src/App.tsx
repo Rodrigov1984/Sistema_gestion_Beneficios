@@ -126,14 +126,14 @@ export default function App() {
       setUserData(registro);
     };
 
-    // Preparar RUTs demo a mostrar bajo la nota (primeros 5 empleados de la nómina cargada)
+    // Preparar RUTs demo a mostrar bajo la nota (últimos 3 empleados de la nómina cargada)
     const demoRuts: { nombre: string; rut: string }[] = (() => {
       try {
         const raw = localStorage.getItem('empleados');
         if (raw) {
           const list = JSON.parse(raw);
           if (Array.isArray(list) && list.length > 0) {
-            return list.slice(0, 5).map((e: any) => ({
+            return list.slice(-3).map((e: any) => ({
               nombre: e.nombre || 'Sin nombre',
               rut: e.rut
             }));
