@@ -187,3 +187,24 @@
 html {
   font-size: var(--font-size);
 }
+
+/* Header logo adjustments: clip top area of the asset and nudge image down */
+.header-logo-wrap{
+  display:flex;
+  align-items:center;
+  height:100%;
+  box-sizing:border-box; /* include padding inside header height */
+  padding-top:0.25rem; /* small gap from green bar */
+  overflow:hidden; /* hide any top part of the image */
+}
+.header-logo{
+  display:block;
+  height:100%;
+  object-fit:contain;
+  transform:translateY(0.25rem); /* nudge image down to hide asset top */
+}
+
+@media (min-width: 768px){
+  .header-logo-wrap{ padding-top:0.25rem; }
+  .header-logo{ transform:translateY(0.125rem); }
+}

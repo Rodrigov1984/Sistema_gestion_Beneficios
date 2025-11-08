@@ -12,6 +12,12 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
-    hmr: { overlay: false }
+    hmr: { overlay: false },
+    allowedHosts: [
+      '.ngrok-free.app',
+      '.ngrok-free.dev',
+      '.ngrok.io',
+      'localhost'
+    ]
   },
 })

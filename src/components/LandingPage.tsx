@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import hero001 from '../assets/001.png';
 
 interface LandingPageProps {
   onNavigateToBeneficios: () => void;
@@ -50,106 +51,16 @@ export default function LandingPage({ onNavigateToBeneficios }: LandingPageProps
           </div>
         </div>
 
-        {/* Red Bar with Logo and Navigation */}
-        <div className="bg-[#D32027]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-20">
-              {/* Logo - Usando texto en lugar de imagen */}
-              <div className="flex items-center">
-                <div className="text-white font-bold text-2xl">
-                  Tresmontes Lucchetti
-                </div>
-              </div>
-
-              {/* Navigation */}
-              <nav className="hidden lg:flex items-center space-x-8">
-                <a href="#" className="text-white hover:text-yellow-300 transition-colors">
-                  Tresmontes Lucchetti
-                </a>
-                <a href="#" className="text-white hover:text-yellow-300 transition-colors">
-                  Nuestras Marcas
-                </a>
-                <a href="#" className="text-white hover:text-yellow-300 transition-colors">
-                  Sostenibilidad
-                </a>
-                <a href="#" className="text-white hover:text-yellow-300 transition-colors">
-                  Noticias
-                </a>
-                <a href="#" className="text-white hover:text-yellow-300 transition-colors">
-                  Prensa
-                </a>
-                <a href="#" className="text-white hover:text-yellow-300 transition-colors">
-                  Únete a nuestro equipo
-                </a>
-              </nav>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu Items */}
-        <div className="lg:hidden bg-[#D32027] border-t border-white/20">
-          <div className="px-4 py-3 space-y-1">
-            <a href="#" className="block text-white hover:text-yellow-300 py-2">
-              Tresmontes Lucchetti
-            </a>
-            <a href="#" className="block text-white hover:text-yellow-300 py-2">
-              Nuestras Marcas
-            </a>
-            <a href="#" className="block text-white hover:text-yellow-300 py-2">
-              Sostenibilidad
-            </a>
-          </div>
-        </div>
+        {/* Replaced red bar + hero with a single full-width promotional image (001.png) */}
       </header>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#D32027] via-[#E84343] to-[#D32027] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <div className="space-y-6">
-              <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-                <p className="text-yellow-300">Desde 1905</p>
-              </div>
-              
-              <h1 className="text-white leading-tight">
-                Cumplimos<br />
-                <span className="text-yellow-300">120 años</span><br />
-                contigo
-              </h1>
-              
-              <p className="text-white/90 max-w-md">
-                Celebramos 120 años de tradición, calidad y sabor que han acompañado a las familias chilenas generación tras generación.
-              </p>
-
-              <div className="flex gap-4">
-                <Button 
-                  className="bg-white text-[#D32027] hover:bg-gray-100 px-8 py-3"
-                >
-                  Conoce Nuestra Historia
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="border-2 border-white text-white hover:bg-white/10 px-8 py-3"
-                >
-                  Nuestros Productos
-                </Button>
-              </div>
-            </div>
-
-            {/* Right Content - Product Showcase */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-yellow-300/20 to-transparent rounded-full blur-3xl"></div>
-              <div className="relative">
-                <img
-                  src="https://images.unsplash.com/photo-1723906012573-6513af5a986c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXN0YSUyMHByb2R1Y3RzJTIwZm9vZHxlbnwxfHx8fDE3NjIyNjA4MTh8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                  alt="Productos Lucchetti"
-                  className="w-full h-auto rounded-lg shadow-2xl"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Full-width promotional image that replaces the red header + previous hero */}
+      <section aria-label="Promotional banner" className="w-full">
+        <img
+          src={hero001}
+          alt="Cumplimos 120 años"
+          className="w-full h-auto object-cover block"
+        />
       </section>
 
       {/* Feature Section */}
