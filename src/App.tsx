@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { User, Shield, Settings } from 'lucide-react';
-import LandingPage from './components/LandingPage';
+// LandingPage removed as initial view; app opens on role selection
 import LoginForm from './components/LoginForm';
 import EmpleadoDashboard from './components/EmpleadoDashboard';
 import GuardiaDashboard from './components/GuardiaDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import ThemeLogo from './components/ThemeLogo';
 
 type Role = 'empleado' | 'guardia' | 'admin' | null;
-type View = 'landing' | 'roles' | 'login';
+type View = 'roles' | 'login';
 
-export default function App() {
-  const [currentView, setCurrentView] = useState<View>('landing');
+function AppContent() {
+  const { theme } = useTheme();
+  const [currentView, setCurrentView] = useState<View>('roles');
   const [selectedRole, setSelectedRole] = useState<Role>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -94,10 +97,7 @@ export default function App() {
     }
   }, []);
 
-  // Show landing page
-  if (currentView === 'landing') {
-    return <LandingPage onNavigateToBeneficios={() => setCurrentView('roles')} />;
-  }
+  // Landing page removed; app opens on role selection by default
 
   // Login solo por RUT para Empleado
   if (currentView === 'login' && selectedRole === 'empleado' && !isAuthenticated) {
@@ -145,14 +145,17 @@ export default function App() {
     })();
 
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-tmluc-split flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-[#D32027] mb-2">Acceso Empleado</h1>
-            <p className="text-gray-600">Ingresa tu RUT para ver tu información y generar tu código QR</p>
-          </div>
+          <div className="card-tmluc">
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-[#E12019]/10 flex items-center justify-center mb-4">
+                <User className="w-10 h-10 text-[#E12019]" />
+              </div>
+              <h1 className="text-tmluc-rojo text-2xl font-semibold mb-2">Acceso Empleado</h1>
+              <p className="text-tmluc-texto text-center">Ingresa tu RUT para ver tu información y generar tu código QR</p>
+            </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
             <label className="text-gray-600 block mb-2">RUT</label>
             <Input
               type="text"
@@ -183,22 +186,22 @@ export default function App() {
             </p>
             {/* RUTs Demo para pruebas */}
             {demoRuts.length > 0 && (
-              <div className="mt-4 p-4 bg-red-50 rounded-lg border-2 border-red-200">
-                <p className="text-sm font-bold text-red-800 mb-3">👥 Empleados Disponibles para Demo</p>
+              <div className="mt-4 p-4 bg-tmluc-rojo-light rounded-lg border-2 border-tmluc-rojo">
+                <p className="text-sm font-bold text-tmluc-rojo mb-3">👥 Empleados Disponibles para Demo</p>
                 <div className="space-y-2">
                   {demoRuts.map((d, i) => (
-                    <div key={d.rut + i} className="bg-white p-2 rounded-lg border border-red-300 shadow-sm">
-                      <p className="text-sm text-gray-800">
-                        <strong className="text-gray-900">{d.nombre}</strong>
+                    <div key={d.rut + i} className="bg-tmluc-blanco p-2 rounded-lg border border-tmluc-rojo shadow-sm">
+                      <p className="text-sm text-tmluc-texto">
+                        <strong className="text-tmluc-texto">{d.nombre}</strong>
                       </p>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-tmluc-texto">
                         <strong>RUT:</strong>{' '}
-                        <code className="bg-gray-100 px-2 py-1 rounded text-red-700 font-bold">{d.rut}</code>
+                        <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-rojo font-bold">{d.rut}</code>
                       </p>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-red-700 mt-3 font-medium">
+                <p className="text-xs text-tmluc-rojo mt-3 font-medium">
                   ✓ Ingresa uno de estos RUTs arriba para ver la información del empleado.
                 </p>
               </div>
@@ -271,14 +274,17 @@ export default function App() {
     })();
 
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-tmluc-split flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-[#008C45] mb-2">Acceso Guardia</h1>
-            <p className="text-gray-600">Ingrese sus credenciales de Gestión de Guardias</p>
-          </div>
+          <div className="card-tmluc space-y-3">
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-[#008C45]/10 flex items-center justify-center mb-4">
+                <Shield className="w-10 h-10 text-[#008C45]" />
+              </div>
+              <h1 className="text-[#008C45] text-2xl font-semibold mb-2">Acceso Guardia</h1>
+              <p className="text-tmluc-texto text-center">Ingrese sus credenciales de Gestión de Guardias</p>
+            </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 space-y-3">
             <div>
               <label className="text-gray-600 block mb-2">Usuario (RUT)</label>
               <Input
@@ -331,26 +337,26 @@ export default function App() {
 
             {/* Guardias Demo */}
             {demoGuardias.length > 0 && (
-              <div className="mt-4 p-4 bg-green-50 rounded-lg border-2 border-green-200">
-                <p className="text-sm font-bold text-green-800 mb-3">👮 Guardias Disponibles para Demo</p>
+              <div className="mt-4 p-4 bg-tmluc-rojo-light rounded-lg border-2 border-tmluc-rojo">
+                <p className="text-sm font-bold text-tmluc-rojo mb-3">👮 Guardias Disponibles para Demo</p>
                 <div className="space-y-2">
                   {demoGuardias.map((g, i) => (
-                    <div key={g.usuario + i} className="bg-white p-2 rounded-lg border border-green-300 shadow-sm">
-                      <p className="text-sm text-gray-800">
-                        <strong className="text-gray-900">{g.nombre}</strong>
+                    <div key={g.usuario + i} className="bg-tmluc-blanco p-2 rounded-lg border border-tmluc-rojo shadow-sm">
+                      <p className="text-sm text-tmluc-texto">
+                        <strong className="text-tmluc-texto">{g.nombre}</strong>
                       </p>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-tmluc-texto">
                         <strong>Usuario:</strong>{' '}
-                        <code className="bg-gray-100 px-2 py-1 rounded text-green-700 font-bold">{g.usuario}</code>
+                        <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-rojo font-bold">{g.usuario}</code>
                       </p>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-tmluc-texto">
                         <strong>Contraseña:</strong>{' '}
-                        <code className="bg-gray-100 px-2 py-1 rounded text-green-700 font-bold">{g.password}</code>
+                        <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-rojo font-bold">{g.password}</code>
                       </p>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-green-700 mt-3 font-medium">
+                <p className="text-xs text-tmluc-rojo mt-3 font-medium">
                   ✓ Usa una de estas credenciales para acceder al panel de guardia.
                 </p>
               </div>
@@ -423,17 +429,29 @@ export default function App() {
 
   // Show role selection
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-tmluc-split flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-[#D32027] mb-2">Sistema de Gestión de Beneficios</h1>
-          <p className="text-gray-600">Tresmontes Lucchetti</p>
+        <div className="flex justify-center mb-12">
+          <div className="card-tmluc max-w-2xl w-full text-center py-8">
+            <div className="flex justify-center mb-6">
+              <ThemeLogo className="h-24" />
+            </div>
+            <h1 
+              className="text-4xl font-bold mb-2"
+              style={{ color: theme.primaryColor, fontFamily: theme.fontFamily }}
+            >
+              {theme.companyName || 'Sistema de Gestión de Beneficios'}
+            </h1>
+            <p className="text-tmluc-texto text-lg" style={{ fontFamily: theme.fontFamily }}>
+              {theme.companySlogan || 'Tresmontes Lucchetti'}
+            </p>
+          </div>
         </div>
 
         {/* Role Selection */}
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <h2 className="text-[#D32027] mb-6 text-center">Seleccione su Rol</h2>
+        <div className="card-tmluc mb-8">
+          <h2 className="text-tmluc-rojo text-2xl font-semibold mb-6 text-center">Seleccione su Rol</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Empleado Card */}
@@ -442,13 +460,13 @@ export default function App() {
                 setSelectedRole('empleado');
                 setCurrentView('login');
               }}
-              className="group relative bg-white border-2 border-[#E5E5E5] rounded-xl p-8 hover:border-[#D32027] hover:shadow-lg transition-all duration-300 flex flex-col items-center"
+              className="group relative bg-tmluc-blanco border-2 border-tmluc-gris-claro rounded-xl p-8 hover:border-tmluc-rojo hover:shadow-lg transition-all duration-300 flex flex-col items-center"
             >
-              <div className="w-20 h-20 bg-[#D32027]/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-[#D32027]/20 transition-colors">
-                <User className="w-10 h-10 text-[#D32027]" />
+              <div className="w-20 h-20 bg-tmluc-rojo/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-tmluc-rojo/20 transition-colors">
+                <User className="w-10 h-10 text-tmluc-rojo" />
               </div>
-              <h3 className="text-[#D32027] mb-2">Usuario/Empleado</h3>
-              <p className="text-gray-600 text-center">
+              <h3 className="text-tmluc-rojo font-semibold text-lg mb-2">Usuario/Empleado</h3>
+              <p className="text-tmluc-texto text-center text-sm">
                 Consulta tus datos y genera tu código QR
               </p>
             </button>
@@ -459,13 +477,13 @@ export default function App() {
                 setSelectedRole('guardia');
                 setCurrentView('login');
               }}
-              className="group relative bg-white border-2 border-[#E5E5E5] rounded-xl p-8 hover:border-[#008C45] hover:shadow-lg transition-all duration-300 flex flex-col items-center"
+              className="group relative bg-tmluc-blanco border-2 border-tmluc-gris-claro rounded-xl p-8 hover:border-tmluc-rojo hover:shadow-lg transition-all duration-300 flex flex-col items-center"
             >
-              <div className="w-20 h-20 bg-[#008C45]/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-[#008C45]/20 transition-colors">
-                <Shield className="w-10 h-10 text-[#008C45]" />
+              <div className="w-20 h-20 bg-tmluc-rojo/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-tmluc-rojo/20 transition-colors">
+                <Shield className="w-10 h-10 text-tmluc-rojo" />
               </div>
-              <h3 className="text-[#008C45] mb-2">Guardia</h3>
-              <p className="text-gray-600 text-center">
+              <h3 className="text-tmluc-rojo font-semibold text-lg mb-2">Guardia</h3>
+              <p className="text-tmluc-texto text-center text-sm">
                 Valida y registra la entrega de beneficios
               </p>
             </button>
@@ -476,29 +494,29 @@ export default function App() {
                 setSelectedRole('admin');
                 setCurrentView('login');
               }}
-              className="group relative bg-white border-2 border-[#E5E5E5] rounded-xl p-8 hover:border-[#D32027] hover:shadow-lg transition-all duration-300 flex flex-col items-center"
+              className="group relative bg-tmluc-blanco border-2 border-tmluc-gris-claro rounded-xl p-8 hover:border-tmluc-rojo hover:shadow-lg transition-all duration-300 flex flex-col items-center"
             >
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-gray-200 transition-colors">
-                <Settings className="w-10 h-10 text-gray-700" />
+              <div className="w-20 h-20 bg-tmluc-gris-claro rounded-full flex items-center justify-center mb-4 group-hover:bg-tmluc-rojo/10 transition-colors">
+                <Settings className="w-10 h-10 text-tmluc-texto" />
               </div>
-              <h3 className="text-gray-900 mb-2">Administrador</h3>
-              <p className="text-gray-600 text-center">
+              <h3 className="text-tmluc-texto font-semibold text-lg mb-2">Administrador</h3>
+              <p className="text-tmluc-texto text-center text-sm">
                 Gestiona empleados y beneficios
               </p>
             </button>
           </div>
         </div>
 
-        {/* Back Button */}
-        <div className="text-center">
-          <button
-            onClick={() => setCurrentView('landing')}
-            className="text-[#D32027] hover:underline"
-          >
-            ← Volver a la página principal
-          </button>
-        </div>
+        {/* Back Button removed — role selection is now the main page */}
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

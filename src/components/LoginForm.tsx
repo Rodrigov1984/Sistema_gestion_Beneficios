@@ -59,7 +59,7 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
         return {
           title: 'Portal del Empleado',
           icon: User,
-          color: '#D32027',
+          color: '#E12019',
           usernamePlaceholder: 'Ej: 16234567-8',
           usernameLabel: 'RUT',
         };
@@ -67,7 +67,7 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
         return {
           title: 'Portal del Guardia',
           icon: Shield,
-          color: '#008C45',
+          color: '#E12019',
           usernamePlaceholder: 'Ej: 15123456-7',
           usernameLabel: 'RUT',
         };
@@ -75,7 +75,7 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
         return {
           title: 'Portal del Administrador',
           icon: Settings,
-          color: '#2C2C2C',
+          color: '#222222',
           usernamePlaceholder: 'admin',
           usernameLabel: 'Usuario',
         };
@@ -113,11 +113,13 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
         const guardiasStorage = localStorage.getItem('guardias');
         const guardiasRegistrados = guardiasStorage ? JSON.parse(guardiasStorage) : [];
 
-        const guardiaByUser = guardiasRegistrados.find((g: any) => g.usuario === username);
+        // Normalizar comparaciones para evitar diferencias por puntos, guiones o espacios
+        const normalize = (v: any) => String(v ?? '').replace(/[.\-\s]/g, '').toLowerCase();
+        const guardiaByUser = guardiasRegistrados.find((g: any) => normalize(g.usuario) === normalize(username));
 
         if (!guardiaByUser) {
           setError('Guardia no enrolado. Contacte al administrador.');
-        } else if (guardiaByUser.password !== password) {
+        } else if (String(guardiaByUser.password ?? '').trim() !== String(password ?? '').trim()) {
           setError('Contraseña incorrecta.');
         } else if (!guardiaByUser.activo) {
           setError('Tu usuario está inactivo. Contacte al administrador.');
@@ -130,8 +132,8 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 bg-white shadow-md rounded-xl">
+    <div className="min-h-screen bg-tmluc-split flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-8 card-tmluc">
         <div className="flex flex-col items-center mb-6">
           <div
             className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
@@ -139,34 +141,34 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
           >
             <Icon className="w-10 h-10" style={{ color: config.color }} />
           </div>
-          <h1 className="text-2xl font-medium mb-2" style={{ color: config.color }}>
+          <h1 className="text-2xl font-semibold mb-2" style={{ color: config.color }}>
             {config.title}
           </h1>
-          <p className="text-gray-600 text-center">Ingresa tus credenciales para continuar</p>
+          <p className="text-tmluc-texto text-center">Ingresa tus credenciales para continuar</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="text-gray-700 block mb-2">{config.usernameLabel}</label>
+            <label className="text-tmluc-texto font-medium block mb-2">{config.usernameLabel}</label>
             <Input
               type="text"
               value={username}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
               placeholder={config.usernamePlaceholder}
-              className="w-full"
+              className="w-full border-tmluc-gris-claro"
               required
             />
           </div>
 
           <div>
-            <label className="text-gray-700 block mb-2">Contraseña</label>
+            <label className="text-tmluc-texto font-medium block mb-2">Contraseña</label>
             <div className="relative">
               <Input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 placeholder="Ingresa tu contraseña"
-                className="w-full pr-10"
+                className="w-full pr-10 border-tmluc-gris-claro"
                 required
               />
               <button
@@ -180,8 +182,8 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
           </div>
 
           {error && (
-            <Alert className="bg-red-50 border-red-200">
-              <AlertDescription className="text-red-700">{error}</AlertDescription>
+            <Alert className="bg-tmluc-rojo-light border-tmluc-rojo">
+              <AlertDescription className="text-tmluc-rojo font-medium">{error}</AlertDescription>
             </Alert>
           )}
 
@@ -189,23 +191,22 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
             <Button
               type="submit"
               disabled={loading}
-              className="w-full text-white"
-              style={{ backgroundColor: config.color }}
+              className="w-full btn-tmluc-primary"
             >
               {loading ? 'Verificando...' : 'Iniciar Sesión'}
             </Button>
-            <Button type="button" onClick={onBack} variant="outline" className="w-full">
+            <Button type="button" onClick={onBack} className="w-full btn-tmluc-secondary">
               Volver
             </Button>
           </div>
         </form>
 
         {role !== 'admin' && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 mb-2">
+          <div className="mt-6 p-4 bg-tmluc-gris-claro rounded-lg border border-tmluc-gris-claro">
+            <p className="text-sm text-tmluc-texto mb-2">
               <strong>Instrucciones:</strong>
             </p>
-            <ul className="text-xs text-gray-600 space-y-1">
+            <ul className="text-xs text-tmluc-texto space-y-1">
               <li>• Usuario: Tu RUT sin puntos (con guión)</li>
               <li>• Contraseña: Tu RUT sin puntos, sin guión y sin dígito verificador</li>
               <li className="mt-2 text-gray-500">
@@ -216,15 +217,15 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
         )}
 
         {role === 'empleado' && (
-          <div className="mt-6 p-4 bg-red-50 rounded-lg border-2 border-red-200">
-            <p className="text-sm font-bold text-red-800 mb-3">👥 RUTs Demo - Empleados</p>
+          <div className="mt-6 p-4 bg-tmluc-gris-claro rounded-lg border-2 border-tmluc-gris-claro">
+            <p className="text-sm font-bold text-tmluc-rojo mb-3">👥 RUTs Demo - Empleados</p>
             <div className="space-y-3">
               {demoEmpleados.map((emp, idx) => (
-                <div key={emp.rut + idx} className="bg-white p-3 rounded-lg border-2 border-red-300 shadow-sm">
-                  <p className="font-bold text-gray-800 mb-1">Empleado #{idx + 1}</p>
-                  <p className="text-sm text-gray-700">
+                <div key={emp.rut + idx} className="bg-white p-3 rounded-lg border-2 border-tmluc-gris-claro shadow-sm">
+                  <p className="font-bold text-tmluc-texto mb-1">Empleado #{idx + 1}</p>
+                  <p className="text-sm text-tmluc-texto">
                     <strong>RUT:</strong>{' '}
-                    <code className="bg-gray-100 px-2 py-1 rounded text-red-700 font-bold">{emp.rut}</code>
+                    <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-rojo font-bold">{emp.rut}</code>
                   </p>
                   <p className="text-sm text-gray-700">
                     <strong>Contraseña:</strong>{' '}
@@ -240,50 +241,50 @@ export default function LoginForm({ role, onLoginSuccess, onBack }: LoginFormPro
         )}
 
         {role === 'admin' && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg border-2 border-gray-300">
-            <p className="text-sm font-bold text-gray-800 mb-3">🔑 Usuario Demo - Administrador</p>
-            <div className="bg-white p-3 rounded-lg border-2 border-gray-400 shadow-sm">
-              <p className="text-sm text-gray-700 mb-2">
+          <div className="mt-6 p-4 bg-tmluc-gris-claro rounded-lg border-2 border-tmluc-gris-claro">
+            <p className="text-sm font-bold text-tmluc-texto mb-3">🔑 Usuario Demo - Administrador</p>
+            <div className="bg-white p-3 rounded-lg border-2 border-tmluc-gris-claro shadow-sm">
+              <p className="text-sm text-tmluc-texto mb-2">
                 <strong>Usuario:</strong>{' '}
-                <code className="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold">admin</code>
+                <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-texto font-bold">admin</code>
               </p>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-tmluc-texto">
                 <strong>Contraseña:</strong>{' '}
-                <code className="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold">123456</code>
+                <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-texto font-bold">123456</code>
               </p>
             </div>
-            <p className="text-xs text-gray-600 mt-3 font-medium">
+            <p className="text-xs text-tmluc-texto mt-3 font-medium">
               ✓ Usa estas credenciales para acceder al panel de administración.
             </p>
           </div>
         )}
 
         {role === 'guardia' && (
-          <div className="mt-6 p-4 bg-green-50 rounded-lg border-2 border-green-200">
-            <p className="text-sm font-bold text-green-800 mb-3">
+          <div className="mt-6 p-4 bg-tmluc-gris-claro rounded-lg border-2 border-tmluc-gris-claro">
+            <p className="text-sm font-bold text-tmluc-verde mb-3">
               👤 Usuarios Demo - Guardias
             </p>
             <div className="space-y-3">
-              <div className="bg-white p-3 rounded-lg border-2 border-green-300 shadow-sm">
-                <p className="font-bold text-gray-800 mb-1">👨 Juan Pérez</p>
-                <p className="text-sm text-gray-700">
-                  <strong>Usuario:</strong> <code className="bg-gray-100 px-2 py-1 rounded text-green-700 font-bold">15123456-7</code>
+              <div className="bg-white p-3 rounded-lg border-2 border-tmluc-gris-claro shadow-sm">
+                <p className="font-bold text-tmluc-texto mb-1">👨 Juan Pérez</p>
+                <p className="text-sm text-tmluc-texto">
+                  <strong>Usuario:</strong> <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-verde font-bold">15123456-7</code>
                 </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Contraseña:</strong> <code className="bg-gray-100 px-2 py-1 rounded text-green-700 font-bold">15123456</code>
+                <p className="text-sm text-tmluc-texto">
+                  <strong>Contraseña:</strong> <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-verde font-bold">15123456</code>
                 </p>
               </div>
-              <div className="bg-white p-3 rounded-lg border-2 border-green-300 shadow-sm">
-                <p className="font-bold text-gray-800 mb-1">👨 Pedro González</p>
-                <p className="text-sm text-gray-700">
-                  <strong>Usuario:</strong> <code className="bg-gray-100 px-2 py-1 rounded text-green-700 font-bold">16234567-8</code>
+              <div className="bg-white p-3 rounded-lg border-2 border-tmluc-gris-claro shadow-sm">
+                <p className="font-bold text-tmluc-texto mb-1">👨 Pedro González</p>
+                <p className="text-sm text-tmluc-texto">
+                  <strong>Usuario:</strong> <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-verde font-bold">16234567-8</code>
                 </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Contraseña:</strong> <code className="bg-gray-100 px-2 py-1 rounded text-green-700 font-bold">16234567</code>
+                <p className="text-sm text-tmluc-texto">
+                  <strong>Contraseña:</strong> <code className="bg-tmluc-gris-claro px-2 py-1 rounded text-tmluc-verde font-bold">16234567</code>
                 </p>
               </div>
             </div>
-            <p className="text-xs text-green-700 mt-3 font-medium">
+            <p className="text-xs text-tmluc-verde mt-3 font-medium">
               ✓ Usuarios configurados por el administrador
             </p>
           </div>

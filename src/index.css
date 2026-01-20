@@ -64,8 +64,25 @@
 
 @layer theme {
   :root, :host {
+    /* ========== PALETA CORPORATIVA TMLUC ========== */
+    --tmluc-rojo: #E12019;
+    --tmluc-verde: #008C45;
+    --tmluc-blanco: #FFFFFF;
+    --tmluc-gris-claro: #F5F5F5;
+    --tmluc-texto: #222222;
+    
+    /* Variantes para estados (generadas desde el rojo principal) */
+    --tmluc-rojo-hover: #c91a14;
+    --tmluc-rojo-light: #f5e5e4;
+    --tmluc-verde-hover: #007038;
+    --tmluc-gris-medio: #D0D0D0;
+    --tmluc-gris-oscuro: #555555;
+    
+    /* ========== FONTS ========== */
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    
+    /* ========== COLORES SISTEMA (mantener para compatibilidad) ========== */
     --color-red-50: oklch(.971 .013 17.38);
     --color-red-200: oklch(.885 .062 18.334);
     --color-red-500: oklch(.637 .237 25.331);
@@ -2674,6 +2691,132 @@ html {
 @property --tw-duration {
   syntax: "*";
   inherits: false
+}
+
+/* ========================================
+   CLASES UTILITY PERSONALIZADAS TMLUC
+   ======================================== */
+
+@layer utilities {
+  /* Colores de fondo */
+  .bg-tmluc-rojo {
+    background-color: var(--tmluc-rojo);
+  }
+  
+  .bg-tmluc-blanco {
+    background-color: var(--tmluc-blanco);
+  }
+  
+  .bg-tmluc-gris-claro {
+    background-color: var(--tmluc-gris-claro);
+  }
+  
+  /* Fondo dividido verde/rojo */
+  .bg-tmluc-split {
+    background: linear-gradient(to bottom, var(--tmluc-verde) 0%, var(--tmluc-verde) 50%, var(--tmluc-rojo) 50%, var(--tmluc-rojo) 100%);
+  }
+  
+  /* Colores de texto */
+  .text-tmluc-rojo {
+    color: var(--tmluc-rojo);
+  }
+  
+  .text-tmluc-texto {
+    color: var(--tmluc-texto);
+  }
+  
+  .text-tmluc-blanco {
+    color: var(--tmluc-blanco);
+  }
+  
+  /* Bordes */
+  .border-tmluc-rojo {
+    border-color: var(--tmluc-rojo);
+  }
+  
+  .border-tmluc-gris-claro {
+    border-color: var(--tmluc-gris-claro);
+  }
+  
+  /* Hover states */
+  .hover\:bg-tmluc-rojo-hover:hover {
+    background-color: var(--tmluc-rojo-hover);
+  }
+  
+  .hover\:text-tmluc-rojo:hover {
+    color: var(--tmluc-rojo);
+  }
+  
+  /* Botones predefinidos */
+  .btn-tmluc-primary {
+    background-color: var(--tmluc-rojo);
+    color: var(--tmluc-blanco);
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-tmluc-primary:hover {
+    background-color: var(--tmluc-rojo-hover);
+  }
+  
+  .btn-tmluc-secondary {
+    background-color: var(--tmluc-blanco);
+    color: var(--tmluc-rojo);
+    border: 2px solid var(--tmluc-rojo);
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  
+  .btn-tmluc-secondary:hover {
+    background-color: var(--tmluc-rojo);
+    color: var(--tmluc-blanco);
+  }
+  
+  /* Cards con estilo TMLUC */
+  .card-tmluc {
+    background-color: var(--tmluc-blanco);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+  }
+  
+  .card-tmluc-header {
+    border-bottom: 2px solid var(--tmluc-rojo);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Badges */
+  .badge-tmluc-activo {
+    background-color: var(--tmluc-rojo);
+    color: var(--tmluc-blanco);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  .badge-tmluc-inactivo {
+    background-color: var(--tmluc-gris-claro);
+    color: var(--tmluc-texto);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  /* Tablas con estilo zebra */
+  .table-tmluc tr:nth-child(even) {
+    background-color: var(--tmluc-gris-claro);
+  }
+  
+  .table-tmluc tr:hover {
+    background-color: var(--tmluc-rojo-light);
+  }
 }
 
 @keyframes enter {

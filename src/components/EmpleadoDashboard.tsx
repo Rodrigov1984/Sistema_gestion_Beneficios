@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Download, QrCode, User, Briefcase, Calendar, Package } from 'lucide-react';
+import { ArrowLeft, Download, QrCode, User, Briefcase, Calendar, Package, AlertTriangle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import QRCode from 'qrcode';
 import logoImg from '../assets/logo.png';
+import ThemeLogo from './ThemeLogo';
+import { useTheme } from '../context/ThemeContext';
 
 interface EmpleadoDashboardProps {
   onBack: () => void;
@@ -32,6 +34,7 @@ const empleadoDataFallback = {
 };
 
 export default function EmpleadoDashboard({ onBack, empleado }: EmpleadoDashboardProps) {
+  const { theme } = useTheme();
   // Derivar datos desde la nómina (props) o usar fallback
   const view = empleado
     ? {
@@ -49,6 +52,89 @@ export default function EmpleadoDashboard({ onBack, empleado }: EmpleadoDashboar
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [generatingQR, setGeneratingQR] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Incidencias (reportes de fallas) state
+  const [showIncidenciaModal, setShowIncidenciaModal] = useState(false);
+  const [incidenciaTipo, setIncidenciaTipo] = useState<string>('rota');
+  const [incidenciaDesc, setIncidenciaDesc] = useState<string>('');
+  const [incidenciaAdjuntos, setIncidenciaAdjuntos] = useState<string[]>([]);
+  const [submittingIncidencia, setSubmittingIncidencia] = useState(false);
+  const MAX_INCIDENCIA_ADJUNTOS = 3;
+
+  const resetIncidenciaForm = () => {
+    setIncidenciaTipo('rota');
+    setIncidenciaDesc('');
+    setIncidenciaAdjuntos([]);
+  };
+
+  const handleAdjuntosChange = (files?: FileList | null) => {
+    if (!files || files.length === 0) {
+      setIncidenciaAdjuntos([]);
+      return;
+    }
+    // enforce max attachments
+    const existingCount = incidenciaAdjuntos.length;
+    const allowed = MAX_INCIDENCIA_ADJUNTOS - existingCount;
+    if (allowed <= 0) {
+      alert(`Ya alcanzaste el máximo de ${MAX_INCIDENCIA_ADJUNTOS} archivos.`);
+      return;
+    }
+    const fileArray = Array.from(files).slice(0, allowed);
+    const readers = fileArray.map(file => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Error leyendo archivo'));
+        reader.readAsDataURL(file);
+      });
+    });
+    Promise.all(readers)
+      .then(results => {
+        // anexar a los adjuntos existentes (respetando el límite)
+        setIncidenciaAdjuntos(prev => {
+          const merged = [...prev, ...results];
+          return merged.slice(0, MAX_INCIDENCIA_ADJUNTOS);
+        });
+        if (results.length < (files?.length || 0)) {
+          alert(`Se añadieron sólo ${results.length} archivos para respetar el máximo de ${MAX_INCIDENCIA_ADJUNTOS}.`);
+        }
+      })
+      .catch(err => {
+        console.error('Error leyendo adjuntos', err);
+        alert('No fue posible leer algunos archivos.');
+      });
+  };
+
+  const submitIncidencia = () => {
+    if (!incidenciaDesc.trim()) {
+      alert('Por favor describe brevemente la incidencia.');
+      return;
+    }
+    setSubmittingIncidencia(true);
+    try {
+      const almacen = localStorage.getItem('incidencias');
+      const lista = almacen ? JSON.parse(almacen) : [];
+      const nueva = {
+        id: `inc-${Date.now()}`,
+        empleadoRut: view.rut,
+        empleadoNombre: view.nombre,
+        tipo: incidenciaTipo,
+        descripcion: incidenciaDesc.trim(),
+        adjuntos: incidenciaAdjuntos,
+        fecha: new Date().toISOString(),
+      };
+      lista.push(nueva);
+      localStorage.setItem('incidencias', JSON.stringify(lista));
+      setSubmittingIncidencia(false);
+      setShowIncidenciaModal(false);
+      resetIncidenciaForm();
+      alert('Incidencia reportada. Gracias, se ha guardado localmente.');
+    } catch (err) {
+      console.error('Error guardando incidencia', err);
+      setSubmittingIncidencia(false);
+      alert('No fue posible guardar la incidencia. Revisa la consola.');
+    }
+  };
 
   const generateQRCode = async () => {
     setGeneratingQR(true);
@@ -270,57 +356,124 @@ export default function EmpleadoDashboard({ onBack, empleado }: EmpleadoDashboar
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-tmluc-split p-4">
       <canvas ref={canvasRef} style={{ display: 'none' }} />
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-6 flex items-center gap-4">
-          <Button onClick={onBack} variant="ghost" className="text-[#D32027] hover:bg-[#D32027]/10">
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Volver
-          </Button>
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div>
+            <Button onClick={onBack} variant="ghost" className="text-tmluc-rojo hover:bg-tmluc-rojo/10">
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Volver
+            </Button>
+          </div>
+          <div>
+            <Button onClick={() => setShowIncidenciaModal(true)} className="btn-tmluc-secondary">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Incidencias
+            </Button>
+          </div>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-[#D32027] mb-2">Portal del Empleado</h1>
-          <p className="text-gray-600">Consulta tus datos y genera tu código QR para retiro de beneficios</p>
+        <div className="mb-8 flex items-center gap-4">
+          {/* Logo personalizado */}
+          <ThemeLogo className="h-12" />
+          <div>
+            <h1 
+              className="text-3xl font-bold mb-2"
+              style={{ color: theme.primaryColor, fontFamily: theme.fontFamily }}
+            >
+              Portal del Empleado
+            </h1>
+            <p className="text-tmluc-texto" style={{ fontFamily: theme.fontFamily }}>
+              Consulta tus datos y genera tu código QR para retiro de beneficios
+            </p>
+          </div>
         </div>
 
         {/* Datos Personales */}
-        <Card className="p-6 mb-6 bg-white shadow-md rounded-xl">
+        <Card className="card-tmluc mb-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-[#D32027]/10 rounded-full flex items-center justify-center">
-              <User className="w-6 h-6 text-[#D32027]" />
+            <div className="w-12 h-12 bg-tmluc-rojo/10 rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 text-tmluc-rojo" />
             </div>
-            <h2 className="text-[#D32027]">Mis Datos Personales</h2>
+            <h2 className="text-tmluc-rojo text-xl font-semibold">Mis Datos Personales</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-gray-600 block mb-1">Nombre Completo</label>
-              <p className="text-gray-900">{view.nombre}</p>
+              <label className="text-tmluc-texto font-medium block mb-1">Nombre Completo</label>
+              <p className="text-tmluc-texto text-lg">{view.nombre}</p>
             </div>
             <div>
-              <label className="text-gray-600 block mb-1">RUT</label>
-              <p className="text-gray-900">{view.rut}</p>
+              <label className="text-tmluc-texto font-medium block mb-1">RUT</label>
+              <p className="text-tmluc-texto text-lg">{view.rut}</p>
             </div>
             <div>
-              <label className="text-gray-600 block mb-1">Cargo</label>
+              <label className="text-tmluc-texto font-medium block mb-1">Cargo</label>
               <div className="flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-[#008C45]" />
-                <p className="text-gray-900">{view.cargo}</p>
+                <Briefcase className="w-4 h-4 text-tmluc-rojo" />
+                <p className="text-tmluc-texto text-lg">{view.cargo}</p>
               </div>
             </div>
             <div>
-              <label className="text-gray-600 block mb-1">Tipo de Contrato</label>
-              <span className={`inline-block px-3 py-1 rounded-full ${
-                view.tipoContrato === 'Planta' ? 'bg-[#008C45]/20 text-[#008C45]' : 'bg-[#D32027]/20 text-[#D32027]'
-              }`}>
+              <label className="text-tmluc-texto font-medium block mb-1">Tipo de Contrato</label>
+              <span className="badge-tmluc-activo">
                 {view.tipoContrato}
               </span>
             </div>
           </div>
         </Card>
+        {/* Incidencias Modal */}
+        {showIncidenciaModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-xl bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-[#D32027]">Reportar Incidencia</h3>
+                <button onClick={() => { setShowIncidenciaModal(false); resetIncidenciaForm(); }} className="text-gray-500 hover:text-gray-700">Cerrar</button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">Tipo de incidencia</label>
+                  <select value={incidenciaTipo} onChange={e => setIncidenciaTipo(e.target.value)} className="w-full border rounded px-3 py-2">
+                    <option value="rota">Producto roto</option>
+                    <option value="mojada">Producto mojado</option>
+                    <option value="faltante">Producto faltante</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">Descripción</label>
+                  <textarea value={incidenciaDesc} onChange={e => setIncidenciaDesc(e.target.value)} rows={4} className="w-full border rounded px-3 py-2" />
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">Archivos (opcional)</label>
+                  <input type="file" accept="image/*,video/*" multiple onChange={e => handleAdjuntosChange(e.target.files)} />
+                  {incidenciaAdjuntos.length > 0 && (
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      {incidenciaAdjuntos.map((src, idx) => (
+                        <div key={idx} className="relative">
+                          <img src={src} alt={`adjunto-${idx}`} className="max-h-28 rounded w-full object-cover" />
+                          <button type="button" onClick={() => setIncidenciaAdjuntos(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-sm">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 flex justify-end gap-3">
+                  <Button onClick={() => { setShowIncidenciaModal(false); resetIncidenciaForm(); }} variant="outline" className="border-gray-300 text-gray-700">Cancelar</Button>
+                  <Button onClick={submitIncidencia} className="bg-[#D32027] text-white" disabled={submittingIncidencia}>
+                    {submittingIncidencia ? 'Enviando...' : 'Reportar'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Información del Beneficio */}
         <Card className="p-6 mb-6 bg-white shadow-md rounded-xl">

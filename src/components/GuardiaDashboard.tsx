@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, QrCode, Search, CheckCircle, XCircle, Package, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, QrCode, Search, CheckCircle, XCircle, Package, User as UserIcon, AlertTriangle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Alert, AlertDescription } from './ui/alert';
 import jsQR from 'jsqr';
-import logoImg from '../assets/logo.png';
+import { BrowserMultiFormatReader } from '@zxing/library';
+import ThemeLogo from './ThemeLogo';
+import { useTheme } from '../context/ThemeContext';
 
 interface GuardiaDashboardProps {
   onBack: () => void;
@@ -56,15 +58,42 @@ const findEmpleadoByRut = (rut: string): Empleado | undefined => {
   return lista.find((e) => normalizeRut(e.rut) === target);
 };
 
+// Extrae RUN/RUT desde texto libre (p. ej. 'run=15743056-4' o '...15743056-4...')
+const extractRunFromText = (text: string): string | null => {
+  if (!text) return null;
+  const cleaned = String(text);
+  // Pattern like RUN=15743056-4 or RUN:15743056-4 or RUN 15743056-4
+  const runRegex = /RUN\s*[=:]?\s*([0-9]{1,8}-?[0-9kK]?)/i;
+  const m = cleaned.match(runRegex);
+  if (m && m[1]) return m[1];
+  // Fallback: find a RUT-like pattern anywhere in the text (6-8 digits + - + verifier)
+  const rutRegex = /([0-9]{6,8}-[0-9kK])/;
+  const m2 = cleaned.match(rutRegex);
+  if (m2 && m2[1]) return m2[1];
+  return null;
+};
+
 export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardProps) {
+  const { theme } = useTheme();
   const [scanMode, setScanMode] = useState<'qr' | 'manual'>('qr');
   const [rutInput, setRutInput] = useState('');
   const [trabajadorActual, setTrabajadorActual] = useState<Trabajador | null>(null);
   const [mensaje, setMensaje] = useState<{ tipo: 'success' | 'error'; texto: string } | null>(null);
   const [ultimaEntrega, setUltimaEntrega] = useState<string>('');
   const [scanning, setScanning] = useState(false);
+  const [packageScanning, setPackageScanning] = useState(false);
+  const [packageCode, setPackageCode] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const packageVideoRef = useRef<HTMLVideoElement>(null);
+  const packageCodeReaderRef = useRef<any>(null);
+  // Incidencias desde portal de guardia
+  const [showIncidenciaModalG, setShowIncidenciaModalG] = useState(false);
+  const [incidenciaTipoG, setIncidenciaTipoG] = useState<string>('rota');
+  const [incidenciaDescG, setIncidenciaDescG] = useState<string>('');
+  const [incidenciaAdjuntosG, setIncidenciaAdjuntosG] = useState<string[]>([]);
+  const [submittingIncidenciaG, setSubmittingIncidenciaG] = useState(false);
+  const MAX_INCIDENCIA_ADJUNTOS = 3;
 
   useEffect(() => {
     if (scanMode === 'qr' && scanning) {
@@ -75,21 +104,64 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
     return () => stopCamera();
   }, [scanMode, scanning]);
 
+  // Limpiar scanner de paquetes al desmontar
+  useEffect(() => {
+    return () => {
+      stopPackageScan();
+    };
+  }, []);
+
   useEffect(() => {
     // Exigir guardia activo del módulo de Gestión de Guardias
-    const normalizeUser = (s: string) => (s || '').replace(/\./g, '').trim();
+    const normalizeUser = (s: string) => (s || '').replace(/[.\-\s]/g, '').trim();
+
+    const isGuardiaActivo = () => {
+      try {
+        if (!guardia) return false;
+        const lista = JSON.parse(localStorage.getItem('guardias') || '[]');
+        const match = lista.find((g: any) => normalizeUser(g.usuario) === normalizeUser(guardia.usuario));
+        return Boolean(match && match.activo);
+      } catch {
+        return false;
+      }
+    };
+
     try {
       if (!guardia) {
         alert('Debe iniciar sesión como guardia.');
         onBack();
         return;
       }
-      const lista = JSON.parse(localStorage.getItem('guardias') || '[]');
-      const match = lista.find((g: any) => normalizeUser(g.usuario) === normalizeUser(guardia.usuario));
-      if (!match || !match.activo) {
+
+      if (!isGuardiaActivo()) {
         alert('Guardia no autorizado o inactivo.');
         onBack();
+        return;
       }
+
+      // Listener para cambios en localStorage (otras pestañas)
+      const onStorage = (ev: StorageEvent) => {
+        if (ev.key === 'guardias' || ev.key === null) {
+          if (!isGuardiaActivo()) {
+            alert('Tu cuenta ha sido desactivada. Serás desconectado.');
+            onBack();
+          }
+        }
+      };
+      window.addEventListener('storage', onStorage as any);
+
+      // Polling ligero como respaldo (cada 5s) para detectar cambios en la misma pestaña
+      const interval = setInterval(() => {
+        if (!isGuardiaActivo()) {
+          alert('Tu cuenta ha sido desactivada. Serás desconectado.');
+          onBack();
+        }
+      }, 5000);
+
+      return () => {
+        window.removeEventListener('storage', onStorage as any);
+        clearInterval(interval);
+      };
     } catch {
       onBack();
     }
@@ -109,6 +181,135 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
       console.error('Error accediendo a la cámara:', err);
       setMensaje({ tipo: 'error', texto: 'No se pudo acceder a la cámara' });
       setScanning(false);
+    }
+  };
+
+  // Iniciar escaneo de código de barras para el paquete (usa @zxing/library desde CDN si es posible)
+  const startPackageScan = async () => {
+    setPackageCode('');
+    setPackageScanning(true);
+    // Asegurar que se detenga el escaneo QR de identidad
+    setScanning(false);
+
+    try {
+      // Usar la librería instalada localmente
+      const codeReader = new BrowserMultiFormatReader();
+      packageCodeReaderRef.current = codeReader;
+
+      if (packageVideoRef.current) {
+        codeReader.decodeFromVideoDevice(null, packageVideoRef.current, (result: any, _err: any) => {
+          if (result) {
+            try {
+              const text = result.getText ? result.getText() : String(result);
+              setPackageCode(text);
+              setPackageScanning(false);
+              // detener reader
+              try { codeReader.reset(); } catch {};
+            } catch (e) {
+              console.error('Error leyendo código de paquete:', e);
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.error('No fue posible iniciar el escáner de paquetes:', err);
+      setMensaje({ tipo: 'error', texto: 'No fue posible iniciar el escáner de paquete en este dispositivo.' });
+      setPackageScanning(false);
+    }
+  };
+
+  const stopPackageScan = () => {
+    try {
+      if (packageCodeReaderRef.current) {
+        try { packageCodeReaderRef.current.reset(); } catch {};
+        packageCodeReaderRef.current = null;
+      }
+      if (packageVideoRef.current?.srcObject) {
+        const stream = packageVideoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(t => t.stop());
+        packageVideoRef.current.srcObject = null;
+      }
+    } catch (e) {
+      // noop
+    }
+    setPackageScanning(false);
+  };
+
+  const resetIncidenciaFormG = () => {
+    setIncidenciaTipoG('rota');
+    setIncidenciaDescG('');
+    setIncidenciaAdjuntosG([]);
+  };
+
+  const handleAdjuntosChangeG = (files?: FileList | null) => {
+    if (!files || files.length === 0) {
+      setIncidenciaAdjuntosG([]);
+      return;
+    }
+    const existingCount = incidenciaAdjuntosG.length;
+    const allowed = MAX_INCIDENCIA_ADJUNTOS - existingCount;
+    if (allowed <= 0) {
+      alert(`Ya alcanzaste el máximo de ${MAX_INCIDENCIA_ADJUNTOS} archivos.`);
+      return;
+    }
+    const fileArray = Array.from(files).slice(0, allowed);
+    const readers = fileArray.map(file => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Error leyendo archivo'));
+        reader.readAsDataURL(file);
+      });
+    });
+    Promise.all(readers)
+      .then(results => {
+        setIncidenciaAdjuntosG(prev => {
+          const merged = [...prev, ...results];
+          return merged.slice(0, MAX_INCIDENCIA_ADJUNTOS);
+        });
+        if (results.length < (files?.length || 0)) {
+          alert(`Se añadieron sólo ${results.length} archivos para respetar el máximo de ${MAX_INCIDENCIA_ADJUNTOS}.`);
+        }
+      })
+      .catch(err => {
+        console.error('Error leyendo adjuntos', err);
+        alert('No fue posible leer algunos archivos.');
+      });
+  };
+
+  const submitIncidenciaG = () => {
+    if (!trabajadorActual) {
+      alert('No hay trabajador seleccionado para reportar la incidencia.');
+      return;
+    }
+    if (!incidenciaDescG.trim()) {
+      alert('Por favor describe brevemente la incidencia.');
+      return;
+    }
+    setSubmittingIncidenciaG(true);
+    try {
+      const almacen = localStorage.getItem('incidencias');
+      const lista = almacen ? JSON.parse(almacen) : [];
+      const nueva = {
+        id: `inc-${Date.now()}`,
+        empleadoRut: trabajadorActual.rut,
+        empleadoNombre: trabajadorActual.nombre,
+        guardiaUsuario: guardia?.usuario || 'desconocido',
+        tipo: incidenciaTipoG,
+        descripcion: incidenciaDescG.trim(),
+        adjuntos: incidenciaAdjuntosG,
+        fecha: new Date().toISOString(),
+      };
+      lista.push(nueva);
+      localStorage.setItem('incidencias', JSON.stringify(lista));
+      setSubmittingIncidenciaG(false);
+      setShowIncidenciaModalG(false);
+      resetIncidenciaFormG();
+      alert('Incidencia reportada. Se guardó localmente.');
+    } catch (err) {
+      console.error('Error guardando incidencia', err);
+      setSubmittingIncidenciaG(false);
+      alert('No fue posible guardar la incidencia. Revisa la consola.');
     }
   };
 
@@ -137,15 +338,30 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
 
       if (code) {
         try {
+          // Primero intentar JSON (formato { "rut": "..." })
           const data = JSON.parse(code.data);
           // Validar SIEMPRE contra nómina cargada usando el RUT del QR
           if (data?.rut) {
             buscarTrabajador(data.rut);
             setScanning(false);
+            stopCamera();
             return;
           }
         } catch (err) {
-          console.error('Error parsing QR:', err);
+          // No es JSON -> intentar extraer RUN dentro del texto libre
+          try {
+            const text = String(code.data || '');
+            const run = extractRunFromText(text);
+            if (run) {
+              // Llamar buscarTrabajador con el valor extraído
+              buscarTrabajador(run);
+              setScanning(false);
+              stopCamera();
+              return;
+            }
+          } catch (e) {
+            console.error('Error extrayendo RUN del QR:', e);
+          }
         }
       }
     }
@@ -191,6 +407,12 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
   const confirmarEntrega = () => {
     if (!trabajadorActual) return;
 
+    // Requerir escaneo de paquete antes de confirmar
+    if (!packageCode) {
+      setMensaje({ tipo: 'error', texto: 'Debe escanear el código de barra del paquete antes de confirmar la entrega.' });
+      return;
+    }
+
     // Releer y actualizar nómina en localStorage
     const lista = loadEmpleados();
     const idx = lista.findIndex((e) => normalizeRut(e.rut) === normalizeRut(trabajadorActual.rut));
@@ -224,9 +446,13 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
     );
     setMensaje({ 
       tipo: 'success', 
-      texto: `✓ Entrega confirmada exitosamente\n📧 Notificación enviada a: ${correoEmpleado}` 
+      texto: `✓ Entrega confirmada exitosamente\n📧 Notificación enviada a: ${correoEmpleado}\n📦 Código paquete: ${packageCode}` 
     });
-    setUltimaEntrega(`${trabajadorActual.nombre} - ${fecha} (📧 ${correoEmpleado})`);
+    setUltimaEntrega(`${trabajadorActual.nombre} - ${fecha} (📧 ${correoEmpleado}) • Código paquete: ${packageCode}`);
+
+    // limpiar packageCode y detener cualquier scanner
+    setPackageCode('');
+    stopPackageScan();
 
     setTimeout(() => {
       setTrabajadorActual(null);
@@ -236,7 +462,7 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-tmluc-split p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6 flex items-center gap-4">
@@ -250,9 +476,20 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
           </Button>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-[#D32027] mb-2">Portal del Guardia</h1>
-          <p className="text-gray-600">Valida y registra la entrega de beneficios</p>
+        <div className="mb-8 flex items-center gap-4">
+          {/* Logo personalizado */}
+          <ThemeLogo className="h-12" />
+          <div>
+            <h1 
+              className="text-2xl font-bold mb-2"
+              style={{ color: theme.primaryColor, fontFamily: theme.fontFamily }}
+            >
+              Portal del Guardia
+            </h1>
+            <p className="text-gray-600" style={{ fontFamily: theme.fontFamily }}>
+              Valida y registra la entrega de beneficios
+            </p>
+          </div>
         </div>
 
         {/* Método de Validación */}
@@ -300,34 +537,19 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
                   <div className="w-32 h-32 bg-[#008C45]/10 rounded-lg mx-auto mb-4 flex items-center justify-center">
                     <QrCode className="w-16 h-16 text-[#008C45]/40" />
                   </div>
-                  <p className="text-gray-600 mb-4">
-                    Activa la cámara para escanear el código QR del trabajador
-                  </p>
-                  <Button
-                    onClick={() => setScanning(true)}
-                    className="bg-[#D32027] hover:bg-[#D32027]/90 text-white"
-                  >
+                  <p className="text-gray-600 mb-4">Activa la cámara para escanear el código QR del trabajador</p>
+                  <Button onClick={() => setScanning(true)} className="bg-[#D32027] hover:bg-[#D32027]/90 text-white">
                     Activar Cámara
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div className="relative bg-black rounded-lg overflow-hidden">
-                    <video
-                      ref={videoRef}
-                      className="w-full h-64 object-cover"
-                      playsInline
-                    />
+                    <video ref={videoRef} className="w-full h-64 object-cover" playsInline />
                     <canvas ref={canvasRef} className="hidden" />
                     <div className="absolute inset-0 border-4 border-[#D32027] m-12 rounded-lg pointer-events-none"></div>
                   </div>
-                  <Button
-                    onClick={() => setScanning(false)}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Detener Escaneo
-                  </Button>
+                  <Button onClick={() => setScanning(false)} variant="outline" className="w-full">Detener Escaneo</Button>
                 </div>
               )}
             </div>
@@ -358,15 +580,11 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
           )}
         </Card>
 
-        {/* Mensajes */}
+        {/* Mensajes (entrega y notificación por correo) */}
         {mensaje && (
-          <Alert className={`mb-6 ${
-            mensaje.tipo === 'success' 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-red-50 border-red-200'
-          }`}>
-            <AlertDescription className={`whitespace-pre-line ${
-              mensaje.tipo === 'success' ? 'text-green-700' : 'text-red-700'
+          <Alert className="mb-6 bg-white border-2 border-tmluc-gris-claro shadow-sm">
+            <AlertDescription className={`whitespace-pre-line font-medium ${
+              mensaje.tipo === 'success' ? 'text-[#008C45]' : 'text-[#D32027]'
             }`}>
               {mensaje.texto}
             </AlertDescription>
@@ -378,7 +596,7 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
           <Card className="p-6 mb-6 bg-white shadow-md rounded-xl">
             {/* Logo en la parte superior */}
             <div className="flex justify-center mb-6">
-              <img src={logoImg} alt="Logo Empresa" className="h-16 object-contain" />
+              <ThemeLogo className="h-16" />
             </div>
 
             <h2 className="text-[#D32027] mb-6 text-center">Información del Trabajador</h2>
@@ -388,14 +606,14 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
               <div className="md:col-span-2 space-y-4">
                 <div>
                   <label className="text-gray-600 block mb-1 font-medium">Nombre Completo</label>
-                  <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 bg-white p-3 rounded-lg border border-tmluc-gris-claro">
                     <UserIcon className="w-4 h-4 text-[#008C45]" />
                     <p className="text-gray-900 font-medium">{trabajadorActual.nombre}</p>
                   </div>
                 </div>
                 <div>
                   <label className="text-gray-600 block mb-1 font-medium">RUT</label>
-                  <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="bg-white p-3 rounded-lg border border-tmluc-gris-claro">
                     <p className="text-gray-900 font-mono font-bold">{trabajadorActual.rut}</p>
                   </div>
                 </div>
@@ -412,7 +630,7 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
                   </div>
                   <div>
                     <label className="text-gray-600 block mb-1 font-medium">Tipo de Caja</label>
-                    <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
+                    <div className="flex items-center gap-2 bg-white p-3 rounded-lg border border-tmluc-gris-claro">
                       <Package className="w-4 h-4 text-[#008C45]" />
                       <p className="text-gray-900 font-medium">
                         {trabajadorActual.tipoContrato === 'Planta' ? 'Caja Grande' : 'Caja Estándar'}
@@ -457,14 +675,93 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
             </div>
 
             <div className="flex gap-4">
-              <Button
-                onClick={confirmarEntrega}
-                disabled={trabajadorActual.retirado}
-                className="flex-1 bg-[#008C45] hover:bg-[#008C45]/90 text-white disabled:bg-gray-300 disabled:cursor-not-allowed h-12 font-medium"
-              >
-                <CheckCircle className="w-5 h-5 mr-2" />
-                Confirmar Entrega
-              </Button>
+              <div className="flex-1">
+                <div className="flex gap-2 mb-3">
+                  <Button
+                    onClick={() => startPackageScan()}
+                    disabled={trabajadorActual.retirado || packageScanning}
+                    className="flex-1 bg-[#0066A0] hover:bg-[#005f98] text-white h-12 font-medium"
+                  >
+                    <Package className="w-5 h-5 mr-2" />
+                    Escanear Paquete
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setPackageCode('');
+                      stopPackageScan();
+                    }}
+                    variant="outline"
+                    className="h-12"
+                  >
+                    Cancelar Scan
+                  </Button>
+                </div>
+
+                <div className="mb-3">
+                  <label className="text-gray-600 block mb-2 text-sm">Código de barras (opcional)</label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Ingresa el número del código de barras"
+                      value={packageCode}
+                      onChange={(e) => setPackageCode(e.target.value)}
+                      onKeyPress={(e) => { if (e.key === 'Enter') { /* permitir confirmar al presionar Enter */ } }}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={() => { /* mantener packageCode tal cual, campo ya enlazado */ }}
+                      variant="outline"
+                      className="h-12"
+                    >
+                      Usar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">También puedes escanear la caja o ingresar el número manualmente.</p>
+                </div>
+
+                <Button
+                  onClick={confirmarEntrega}
+                  disabled={trabajadorActual.retirado || !packageCode}
+                  className="w-full bg-[#008C45] hover:bg-[#008C45]/90 text-white disabled:bg-gray-300 disabled:cursor-not-allowed h-12 font-medium"
+                >
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  Confirmar Entrega
+                </Button>
+
+                {packageCode && (
+                  <p className="mt-2 text-sm text-gray-700">Código paquete: <span className="font-mono">{packageCode}</span></p>
+                )}
+                <div className="mt-3">
+                  <Button
+                    onClick={() => setShowIncidenciaModalG(true)}
+                    variant="outline"
+                    className="w-full border-[#D32027] text-[#D32027] hover:bg-[#D32027]/10"
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Reportar Incidencia
+                  </Button>
+                </div>
+                {/* Área de escaneo para paquete (se muestra solo cuando packageScanning=true) */}
+                {packageScanning && (
+                  <div className="space-y-4 mt-4">
+                    <div className="relative bg-black rounded-lg overflow-hidden">
+                      <video
+                        ref={packageVideoRef}
+                        className="w-full h-64 object-cover"
+                        playsInline
+                      />
+                      <div className="absolute inset-0 border-4 border-[#0066A0] m-12 rounded-lg pointer-events-none"></div>
+                    </div>
+                    <Button
+                      onClick={() => stopPackageScan()}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Detener Escaneo de Paquete
+                    </Button>
+                  </div>
+                )}
+              </div>
               <Button
                 onClick={() => {
                   setTrabajadorActual(null);
@@ -481,8 +778,58 @@ export default function GuardiaDashboard({ onBack, guardia }: GuardiaDashboardPr
         )}
 
         {/* Última Entrega */}
+        {/* Modal de Incidencias (Guardia) */}
+        {showIncidenciaModalG && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-xl bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-[#D32027]"><AlertTriangle className="w-5 h-5 inline-block mr-2"/> Reportar Incidencia</h3>
+                <button onClick={() => { setShowIncidenciaModalG(false); resetIncidenciaFormG(); }} className="text-gray-500 hover:text-gray-700">Cerrar</button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">Tipo de incidencia</label>
+                  <select value={incidenciaTipoG} onChange={e => setIncidenciaTipoG(e.target.value)} className="w-full border rounded px-3 py-2">
+                    <option value="rota">Producto roto</option>
+                    <option value="mojada">Producto mojado</option>
+                    <option value="faltante">Producto faltante</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">Descripción</label>
+                  <textarea value={incidenciaDescG} onChange={e => setIncidenciaDescG(e.target.value)} rows={4} className="w-full border rounded px-3 py-2" />
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">Archivos (opcional)</label>
+                  <input type="file" accept="image/*,video/*" multiple onChange={e => handleAdjuntosChangeG(e.target.files)} />
+                  {incidenciaAdjuntosG.length > 0 && (
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      {incidenciaAdjuntosG.map((src, idx) => (
+                        <div key={idx} className="relative">
+                          <img src={src} alt={`adjunto-${idx}`} className="max-h-28 rounded w-full object-cover" />
+                          <button type="button" onClick={() => setIncidenciaAdjuntosG(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-sm">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 flex justify-end gap-3">
+                  <Button onClick={() => { setShowIncidenciaModalG(false); resetIncidenciaFormG(); }} variant="outline" className="border-gray-300 text-gray-700">Cancelar</Button>
+                  <Button onClick={submitIncidenciaG} className="bg-[#D32027] text-white" disabled={submittingIncidenciaG}>
+                    {submittingIncidenciaG ? 'Enviando...' : 'Reportar'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {ultimaEntrega && (
-          <Card className="p-4 bg-[#008C45]/10 rounded-xl">
+          <Card className="p-4 bg-white rounded-xl border-2 border-tmluc-gris-claro shadow-sm">
             <p className="text-gray-900">
               <span className="text-gray-600">Última entrega:</span> {ultimaEntrega}
             </p>

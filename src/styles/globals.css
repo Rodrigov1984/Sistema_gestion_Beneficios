@@ -39,6 +39,52 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Theme customization variables - defaults */
+  --theme-primary: #D32027;
+  --theme-secondary: #21808D;
+  --theme-accent: #5E5240;
+  --theme-background: #ffffff;
+  --theme-card-bg: #ffffff;
+  --theme-text: #030213;
+  --theme-text-muted: #717182;
+  --theme-font-family: Inter, system-ui, sans-serif;
+  --theme-font-size: 16px;
+  --theme-heading-size: 24px;
+  --theme-btn-radius: 8px;
+  --theme-btn-px: 16px;
+  --theme-btn-py: 8px;
+  --theme-btn-font-size: 14px;
+  --theme-header-bg: #21808D;
+  --theme-sidebar-bg: #f8f9fa;
+  --theme-footer-bg: #5E5240;
+  --theme-logo-width: 150px;
+  --theme-logo-height: 50px;
+  
+  /* State colors */
+  --theme-success: #22c55e;
+  --theme-warning: #f59e0b;
+  --theme-error: #ef4444;
+  --theme-info: #3b82f6;
+  
+  /* Font weights */
+  --theme-font-weight: 400;
+  --theme-heading-font-weight: 700;
+  
+  /* Borders */
+  --theme-border-width: 1px;
+  --theme-border-color: #e5e7eb;
+  --theme-border-radius: 8px;
+  
+  /* Shadows */
+  --theme-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  
+  /* Spacing */
+  --theme-spacing-unit: 4px;
+  --theme-container-max-width: 1280px;
+  
+  /* Transitions */
+  --theme-transition-speed: 200ms;
 }
 
 .dark {
@@ -208,3 +254,536 @@ html {
   .header-logo-wrap{ padding-top:0.25rem; }
   .header-logo{ transform:translateY(0.125rem); }
 }
+
+/* ====================================
+   THEME CUSTOMIZATION CLASSES
+   ==================================== */
+
+/* Apply theme font family globally */
+body {
+  font-family: var(--theme-font-family);
+}
+
+/* Theme-aware buttons */
+.btn-themed {
+  border-radius: var(--theme-btn-radius);
+  padding: var(--theme-btn-py) var(--theme-btn-px);
+  font-size: var(--theme-btn-font-size);
+  font-family: var(--theme-font-family);
+}
+
+.btn-themed-primary {
+  background-color: var(--theme-primary);
+  color: #ffffff;
+}
+
+.btn-themed-primary:hover {
+  filter: brightness(0.9);
+}
+
+.btn-themed-secondary {
+  background-color: var(--theme-secondary);
+  color: #ffffff;
+}
+
+.btn-themed-secondary:hover {
+  filter: brightness(0.9);
+}
+
+.btn-themed-outline {
+  background-color: transparent;
+  color: var(--theme-primary);
+  border: 1px solid var(--theme-primary);
+}
+
+.btn-themed-outline:hover {
+  background-color: var(--theme-primary);
+  color: #ffffff;
+}
+
+/* Theme backgrounds */
+.bg-theme {
+  background-color: var(--theme-background);
+}
+
+.bg-theme-card {
+  background-color: var(--theme-card-bg);
+}
+
+.bg-theme-header {
+  background-color: var(--theme-header-bg);
+}
+
+.bg-theme-sidebar {
+  background-color: var(--theme-sidebar-bg);
+}
+
+.bg-theme-footer {
+  background-color: var(--theme-footer-bg);
+}
+
+/* Theme text colors */
+.text-theme {
+  color: var(--theme-text);
+}
+
+.text-theme-muted {
+  color: var(--theme-text-muted);
+}
+
+.text-theme-primary {
+  color: var(--theme-primary);
+}
+
+.text-theme-secondary {
+  color: var(--theme-secondary);
+}
+
+/* Theme typography */
+.text-theme-heading {
+  font-size: var(--theme-heading-size);
+  font-family: var(--theme-font-family);
+}
+
+.text-theme-base {
+  font-size: var(--theme-font-size);
+  font-family: var(--theme-font-family);
+}
+
+/* Theme logo */
+.theme-logo {
+  width: var(--theme-logo-width);
+  height: var(--theme-logo-height);
+  object-fit: contain;
+}
+
+/* ====================================
+   GLOBAL THEME OVERRIDES
+   These override hardcoded colors to use theme variables
+   ==================================== */
+
+/* ========== COLORES PRINCIPALES ========== */
+
+/* Override primary color classes - Rojo (#D32027) */
+.bg-\[\#D32027\],
+.bg-tmluc-rojo {
+  background-color: var(--theme-primary) !important;
+}
+
+.text-\[\#D32027\],
+.text-tmluc-rojo {
+  color: var(--theme-primary) !important;
+}
+
+.hover\:bg-\[\#D32027\]\/10:hover,
+.hover\:bg-tmluc-rojo\/10:hover {
+  background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
+}
+
+.hover\:bg-\[\#D32027\]\/90:hover {
+  background-color: color-mix(in srgb, var(--theme-primary) 90%, black) !important;
+}
+
+.border-\[\#D32027\],
+.border-tmluc-rojo {
+  border-color: var(--theme-primary) !important;
+}
+
+.hover\:border-tmluc-rojo:hover {
+  border-color: var(--theme-primary) !important;
+}
+
+.bg-tmluc-rojo\/10,
+.bg-\[\#D32027\]\/10 {
+  background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
+}
+
+.bg-tmluc-rojo\/20,
+.group-hover\:bg-tmluc-rojo\/20:hover {
+  background-color: color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+}
+
+/* Override secondary color classes - Teal (#21808D) */
+.bg-\[\#21808D\] {
+  background-color: var(--theme-secondary) !important;
+}
+
+.text-\[\#21808D\] {
+  color: var(--theme-secondary) !important;
+}
+
+.bg-\[\#21808D\]\/10 {
+  background-color: color-mix(in srgb, var(--theme-secondary) 10%, transparent) !important;
+}
+
+.hover\:bg-\[\#21808D\]\/90:hover {
+  background-color: color-mix(in srgb, var(--theme-secondary) 90%, black) !important;
+}
+
+/* Override accent/success colors - Verde (#008C45) */
+.bg-\[\#008C45\]\/10 {
+  background-color: color-mix(in srgb, var(--theme-accent) 10%, transparent) !important;
+}
+
+.text-\[\#008C45\] {
+  color: var(--theme-accent) !important;
+}
+
+/* ========== TIPOGRAFÍA GLOBAL ========== */
+
+/* Apply theme font to body */
+body {
+  font-family: var(--theme-font-family) !important;
+  font-size: var(--theme-font-size) !important;
+  color: var(--theme-text);
+  background-color: var(--theme-background);
+}
+
+/* Apply to all text elements */
+p, span, div, label, a, li, td, th {
+  font-family: var(--theme-font-family) !important;
+}
+
+/* Apply to all headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--theme-font-family) !important;
+  color: var(--theme-text);
+}
+
+h1 {
+  font-size: var(--theme-heading-size) !important;
+}
+
+h2 {
+  font-size: calc(var(--theme-heading-size) * 0.85) !important;
+}
+
+h3 {
+  font-size: calc(var(--theme-heading-size) * 0.75) !important;
+}
+
+/* ========== COLORES DE TEXTO ========== */
+
+/* Text muted colors */
+.text-gray-600, .text-gray-500, .text-gray-400 {
+  color: var(--theme-text-muted) !important;
+}
+
+.text-gray-700, .text-gray-800, .text-gray-900 {
+  color: var(--theme-text) !important;
+}
+
+.text-tmluc-texto {
+  color: var(--theme-text) !important;
+}
+
+/* ========== FONDOS ========== */
+
+/* Apply theme to cards and white backgrounds */
+.bg-white {
+  background-color: var(--theme-card-bg) !important;
+}
+
+.card-tmluc {
+  background-color: var(--theme-card-bg) !important;
+  font-family: var(--theme-font-family) !important;
+}
+
+/* Split background gradient using theme colors */
+.bg-tmluc-split {
+  background: linear-gradient(to bottom, var(--theme-header-bg) 0%, var(--theme-header-bg) 200px, var(--theme-background) 200px) !important;
+}
+
+/* Sidebar background */
+.bg-sidebar, .sidebar {
+  background-color: var(--theme-sidebar-bg) !important;
+}
+
+/* ========== BOTONES - ESTILOS COMPLETOS ========== */
+
+/* Base button styles */
+button, .btn, [role="button"] {
+  font-family: var(--theme-font-family) !important;
+  border-radius: var(--theme-btn-radius) !important;
+  font-size: var(--theme-btn-font-size) !important;
+}
+
+/* Primary buttons (red) */
+.bg-\[\#D32027\].text-white,
+button.bg-\[\#D32027\],
+.btn-tmluc-primary {
+  background-color: var(--theme-primary) !important;
+  border-radius: var(--theme-btn-radius) !important;
+  padding: var(--theme-btn-py) var(--theme-btn-px) !important;
+  font-size: var(--theme-btn-font-size) !important;
+  font-family: var(--theme-font-family) !important;
+}
+
+/* Secondary/teal buttons */
+.bg-\[\#21808D\].text-white,
+button.bg-\[\#21808D\],
+.btn-tmluc-secondary {
+  background-color: var(--theme-secondary) !important;
+  border-radius: var(--theme-btn-radius) !important;
+  padding: var(--theme-btn-py) var(--theme-btn-px) !important;
+  font-size: var(--theme-btn-font-size) !important;
+  font-family: var(--theme-font-family) !important;
+}
+
+/* Outline buttons */
+button[class*="border"],
+.btn-outline {
+  border-radius: var(--theme-btn-radius) !important;
+  font-size: var(--theme-btn-font-size) !important;
+  font-family: var(--theme-font-family) !important;
+}
+
+/* Ghost buttons */
+button[class*="ghost"],
+.btn-ghost {
+  border-radius: var(--theme-btn-radius) !important;
+  font-size: var(--theme-btn-font-size) !important;
+  font-family: var(--theme-font-family) !important;
+}
+
+/* Button hover states with theme primary */
+button:hover {
+  border-radius: var(--theme-btn-radius) !important;
+}
+
+/* ========== INPUTS Y FORMULARIOS ========== */
+
+input, textarea, select {
+  font-family: var(--theme-font-family) !important;
+  font-size: var(--theme-font-size) !important;
+  border-radius: var(--theme-btn-radius) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--theme-primary) !important;
+  outline-color: var(--theme-primary) !important;
+}
+
+/* ========== CARDS Y CONTENEDORES ========== */
+
+.rounded-xl {
+  border-radius: calc(var(--theme-btn-radius) + 4px) !important;
+}
+
+.rounded-lg {
+  border-radius: var(--theme-btn-radius) !important;
+}
+
+.rounded-md {
+  border-radius: calc(var(--theme-btn-radius) - 2px) !important;
+}
+
+/* ========== BADGES Y CHIPS ========== */
+
+.badge, [class*="badge"] {
+  font-family: var(--theme-font-family) !important;
+  border-radius: var(--theme-btn-radius) !important;
+}
+
+/* ========== TABLAS ========== */
+
+table, th, td {
+  font-family: var(--theme-font-family) !important;
+}
+
+th {
+  color: var(--theme-text) !important;
+}
+
+td {
+  color: var(--theme-text) !important;
+}
+
+/* ========== ALERTAS Y MENSAJES ========== */
+
+.alert, [class*="alert"] {
+  font-family: var(--theme-font-family) !important;
+  border-radius: var(--theme-btn-radius) !important;
+}
+
+/* ========== MODALES Y DIÁLOGOS ========== */
+
+[role="dialog"], .modal, .dialog {
+  font-family: var(--theme-font-family) !important;
+}
+
+/* ========== SELECTORES Y DROPDOWNS ========== */
+
+[role="listbox"], [role="menu"], .dropdown {
+  font-family: var(--theme-font-family) !important;
+  border-radius: var(--theme-btn-radius) !important;
+}
+
+/* ========== TABS ========== */
+
+[role="tab"] {
+  font-family: var(--theme-font-family) !important;
+  border-radius: var(--theme-btn-radius) !important;
+}
+
+[role="tab"][data-state="active"] {
+  background-color: var(--theme-primary) !important;
+  color: white !important;
+}
+
+/* ========== ICONOS CON COLORES DEL TEMA ========== */
+
+.text-tmluc-rojo svg,
+.text-\[\#D32027\] svg {
+  color: var(--theme-primary) !important;
+}
+
+/* ========== EFECTOS HOVER GLOBALES ========== */
+
+.hover\:shadow-lg:hover {
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
+}
+
+/* ========== SCROLLBAR PERSONALIZADO ========== */
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--theme-primary);
+  border-radius: var(--theme-btn-radius);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--theme-primary) 80%, black);
+}
+
+/* ========== COMPONENTES SELECT (RADIX) ========== */
+
+[data-radix-popper-content-wrapper] {
+  font-family: var(--theme-font-family) !important;
+}
+
+[data-radix-popper-content-wrapper] button,
+[data-radix-popper-content-wrapper] [role="option"] {
+  font-family: var(--theme-font-family) !important;
+  font-size: var(--theme-btn-font-size) !important;
+}
+
+/* ========== LINKS Y NAVEGACIÓN ========== */
+
+a {
+  font-family: var(--theme-font-family) !important;
+}
+
+a:hover {
+  color: var(--theme-primary) !important;
+}
+
+/* ========== CHECKBOXES Y RADIOS ========== */
+
+[type="checkbox"]:checked,
+[type="radio"]:checked {
+  background-color: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+/* ========== SWITCH ========== */
+
+[role="switch"][data-state="checked"] {
+  background-color: var(--theme-primary) !important;
+}
+
+/* ========== PROGRESS BAR ========== */
+
+[role="progressbar"] > div {
+  background-color: var(--theme-primary) !important;
+}
+
+/* ========== CHARTS ========== */
+
+.recharts-text {
+  font-family: var(--theme-font-family) !important;
+  fill: var(--theme-text) !important;
+}
+
+.recharts-cartesian-axis-tick-value {
+  font-family: var(--theme-font-family) !important;
+  fill: var(--theme-text-muted) !important;
+}
+
+/* ========== TOOLTIPS ========== */
+
+[role="tooltip"] {
+  font-family: var(--theme-font-family) !important;
+  font-size: calc(var(--theme-font-size) * 0.875) !important;
+  border-radius: var(--theme-btn-radius) !important;
+}
+
+/* ========== FOOTER ========== */
+
+footer, .footer {
+  background-color: var(--theme-footer-bg) !important;
+  font-family: var(--theme-font-family) !important;
+}
+
+/* ========== HEADER ESPECÍFICO ========== */
+
+header, .header {
+  background-color: var(--theme-header-bg) !important;
+}
+
+/* ========== PIE CHART COLORS ========== */
+
+.recharts-pie-sector:first-child {
+  fill: var(--theme-secondary) !important;
+}
+
+.recharts-pie-sector:nth-child(2) {
+  fill: var(--theme-accent) !important;
+}
+
+/* ========== BAR CHART COLORS ========== */
+
+.recharts-bar-rectangle {
+  fill: var(--theme-secondary) !important;
+}
+
+/* ========== ESTADÍSTICAS CARDS ========== */
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--theme-text) 10%, transparent),
+              0 2px 4px -2px color-mix(in srgb, var(--theme-text) 10%, transparent) !important;
+}
+
+/* ========== FOCUS STATES ========== */
+
+:focus-visible {
+  outline-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+}
+
+/* ========== SELECTION ========== */
+
+::selection {
+  background-color: color-mix(in srgb, var(--theme-primary) 30%, transparent);
+  color: var(--theme-text);
+}
+
+/* ========== PLACEHOLDER ========== */
+
+::placeholder {
+  color: var(--theme-text-muted) !important;
+  font-family: var(--theme-font-family) !important;
+}
+
+/* ========== RESPONSIVE FONT SIZES ========== */
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: calc(var(--theme-heading-size) * 0.8) !important;
+  }
+  
+  h2 {
+    font-size: calc(var(--theme-heading-size) * 0.7) !important;
+  }
+}
+
+
