@@ -27,6 +27,51 @@ El **Sistema de Gestión de Beneficios** es una aplicación web moderna desarrol
 
 Diseñado originalmente para **Tresmontes Lucchetti**, el sistema es completamente personalizable y puede adaptarse a cualquier organización mediante su potente editor de temas.
 
+### 📌 Información del Proyecto
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Estado** | Proyecto de Título - Analista Programador |
+| **Tipo** | Proyecto Integrado / Académico |
+| **Stack** | React + TypeScript + Vite + Tailwind CSS |
+| **Base de datos** | Frontend only (localStorage, sin backend) |
+| **Despliegue** | Configurado para Vercel |
+
+---
+
+## 🎯 Problemática
+
+### El Problema
+
+Las empresas que entregan **beneficios corporativos** a sus empleados (como cajas de navidad, bonos, kits de seguridad, etc.) enfrentan varios desafíos:
+
+1. **Control manual ineficiente**: El registro de entregas se hace en papel o planillas Excel, lo que genera errores, pérdida de información y duplicación de entregas.
+
+2. **Falta de trazabilidad**: No existe un sistema que permita saber en tiempo real quién ya retiró su beneficio y quién no.
+
+3. **Verificación lenta**: Los guardias o encargados de entrega deben buscar manualmente en listas físicas si un empleado tiene derecho al beneficio.
+
+4. **Fraude y duplicaciones**: Sin un sistema de validación digital, es difícil evitar que alguien retire un beneficio más de una vez.
+
+5. **Gestión de nóminas complicada**: Actualizar la lista de empleados elegibles requiere procesos manuales tediosos.
+
+### La Solución
+
+| Problema | Solución |
+|----------|----------|
+| Control manual | **Dashboard digital** con estadísticas en tiempo real |
+| Falta de trazabilidad | **Registro automático** de cada entrega con fecha/hora |
+| Verificación lenta | **Código QR único** por empleado para validación instantánea |
+| Fraude/duplicaciones | **Bloqueo automático** una vez entregado el beneficio |
+| Gestión de nóminas | **Carga masiva Excel** para actualizar empleados rápidamente |
+
+### ¿Para quién está hecho?
+
+- **Empresas** que entregan beneficios a sus empleados
+- **Departamentos de RRHH** que gestionan la nómina de beneficiarios
+- **Guardias/Personal de seguridad** que validan y registran entregas
+- **Empleados** que necesitan acceder a su información y generar su QR
+
 ---
 
 ## ✨ Características
